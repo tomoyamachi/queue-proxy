@@ -1,5 +1,5 @@
 #include "queue/queue.h"
-
+#include <fstream>
 int main()
 {
     QueueManager queueManager;
@@ -13,6 +13,11 @@ int main()
             queueManager.stop();
             break;
         }
+
+
+        std::ofstream ofs(QUEUE_PATH+"/"+request);
+        ofs << "test" << std::endl;
+        ofs.close();
     }
     const int resultQueueManager = futureQueueManager.get();
     std::cout << "resultQueueManager: " << resultQueueManager << "\n";

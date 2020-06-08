@@ -7,6 +7,8 @@
 #include <unordered_map>
 #include <mutex>
 #include <future>
+#include <filesystem>
+
 
 class RunParallel {
 protected:
@@ -18,4 +20,4 @@ public:
     };
 };
 
-
+std::string QUEUE_PATH = "tmp";

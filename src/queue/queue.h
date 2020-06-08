@@ -7,12 +7,19 @@ public:
 
         for (;;)
         {
+
             if (QueueManager::m_stop) {
                 break;
             }
+
+            std::string path = QUEUE_PATH+"/";
+            for (const auto & entry : std::filesystem::directory_iterator(path))
+                std::cout << entry.path() << std::endl;
+
         }
 
         std::cout << "End ConnectionManager()\n";
         return 1;
     }
 };
+
