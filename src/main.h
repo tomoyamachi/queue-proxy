@@ -8,7 +8,7 @@
 #include <mutex>
 #include <future>
 #include <filesystem>
-
+#include <fstream>
 
 class RunParallel {
 protected:
@@ -20,4 +20,6 @@ public:
     };
 };
 
-std::string QUEUE_PATH = "tmp";
+const std::string QUEUE_DIR = "tmp/queue";
+const std::string CONNECTION_PATH = "tmp/connection.json";
+const int CONNECTION_DURATION = 10000;

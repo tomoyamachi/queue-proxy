@@ -12,7 +12,7 @@ public:
                 break;
             }
 
-            std::string path = QUEUE_PATH+"/";
+            std::string path = QUEUE_DIR + "/";
             for (const auto & entry : std::filesystem::directory_iterator(path))
                 std::cout << entry.path() << std::endl;
 
