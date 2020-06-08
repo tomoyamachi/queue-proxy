@@ -32,6 +32,7 @@ int main()
     std::future<int> futureQueueManager = std::async(std::launch::async, &QueueManager::run, &queueManager);
     std::future<int> futureConnectionManager = std::async(std::launch::async, &ConnectionManager::run, &connectionManager);
 
+
     for (;;)
     {
         std::string host;
@@ -44,7 +45,14 @@ int main()
 
         auto hashed = createHash(host, "");
         std::ofstream ofs(QUEUE_REQ_DIR + "/" + hashed);
-        ofs << host << std::endl;
+        ProxyRequest::request p = {
+                host,
+                "fuga",
+                "hoge"
+        };
+
+        nlohmann::json j = p;
+        ofs << std::setw(4) << j << std::endl;
         ofs.close();
     }
     const int resultQueueManager = futureQueueManager.get();

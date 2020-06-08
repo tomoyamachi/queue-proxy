@@ -1,0 +1,6 @@
+[submodule "include/cpr"]
+	path = include/cpr
+	url = https://github.com/whoshuu/cpr.git
+[submodule "include/json"]
+	path = include/json
+	url = https://github.com/nlohmann/json.git

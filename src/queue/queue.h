@@ -1,5 +1,7 @@
 #pragma once
 #include "../main.h"
+#include <cpr/cpr.h>
+
 class QueueManager: public RunParallel {
 public:
     int run() override {
@@ -23,12 +25,22 @@ public:
                 }
                 reqfile.close();
 
+
                 // TODO : transaction
+                auto response = cpr::Get(
+                        cpr::Url{"https://httpbin.org/get"},
+                        cpr::Body{"hello"},
+                        cpr::Header{}
+                        );
+
                 auto file = entry.path().filename();
                 std::ofstream ofs(QUEUE_RES_DIR + "/" + entry.path().filename().string());
-                ofs << "resp" << std::endl;
+                ofs << "status:" << response.status_code << std::endl;
+                //ofs << "header:" << response.header << std::endl;
+                ofs << "body:" << response.text << std::endl;
                 ofs.close();
 
+                // TODO: handle error
                 std::cout << "delete " << entry.path() << std::filesystem::remove(entry.path()) << std::endl;
             }
         }
