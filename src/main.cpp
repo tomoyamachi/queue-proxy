@@ -35,24 +35,23 @@ int main()
 
     for (;;)
     {
-        std::string host;
-        std::cin >> host;
-        if (host == "exit")
+        std::string uri;
+        std::cin >> uri;
+        if (uri == "exit")
         {
             queueManager.stop();
             break;
         }
 
-        auto hashed = createHash(host, "");
+        auto hashed = createHash(uri, "");
         std::ofstream ofs(QUEUE_REQ_DIR + "/" + hashed);
-        ProxyRequest::request p = {
-                host,
-                "fuga",
-                "hoge"
+        proxy::request p = {
+                "GET",
+                uri,
+                "body"
         };
-
         nlohmann::json j = p;
-        ofs << std::setw(4) << j << std::endl;
+        ofs << j;
         ofs.close();
     }
     const int resultQueueManager = futureQueueManager.get();

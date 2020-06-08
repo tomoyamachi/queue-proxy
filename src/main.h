@@ -29,24 +29,30 @@ const std::string QUEUE_RES_DIR = QUEUE_DIR + "/response";
 const std::string CONNECTION_PATH = ROOT_DIR + "/connection.json";
 const int CONNECTION_DURATION = 100000;
 
-namespace ProxyRequest {
+namespace proxy {
+    const std::string METHOD_POST = "POST";
+    const std::string METHOD_GET = "GET";
+    const std::string METHOD_PUT = "PUT";
+    const std::string METHOD_DELETE = "DELETE";
+
     struct request {
-        std::string host;
-        std::string uri;
         std::string method;
+        std::string uri;
+        std::string body;
         int64_t content_length;
         std::string headers;
-        std::string body;
         std::string remote_address;
     };
 
     void to_json(nlohmann::json &j, const request &p) {
-        j = nlohmann::json{{"host",   p.host},
+        j = nlohmann::json{{"method",   p.method},
                            {"uri",    p.uri},
-                           {"method", p.method}};
+                           {"body", p.body}};
     }
 
     void from_json(const nlohmann::json &j, request &p) {
-        j.at("host").get_to(p.host);
+        j.at("method").get_to(p.method);
+        j.at("uri").get_to(p.uri);
+        j.at("body").get_to(p.body);
     }
 }
