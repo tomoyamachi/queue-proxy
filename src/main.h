@@ -9,6 +9,7 @@
 #include <future>
 #include <filesystem>
 #include <fstream>
+#include <stdio.h>
 
 class RunParallel {
 protected:
@@ -20,6 +21,9 @@ public:
     };
 };
 
-const std::string QUEUE_DIR = "tmp/queue";
-const std::string CONNECTION_PATH = "tmp/connection.json";
-const int CONNECTION_DURATION = 10000;
+const std::string ROOT_DIR = "tmp";
+const std::string QUEUE_DIR = ROOT_DIR + "/queue";
+const std::string QUEUE_REQ_DIR = QUEUE_DIR + "/req";
+const std::string QUEUE_RES_DIR = QUEUE_DIR + "/response";
+const std::string CONNECTION_PATH = ROOT_DIR + "/connection.json";
+const int CONNECTION_DURATION = 100000;
