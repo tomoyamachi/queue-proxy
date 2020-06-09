@@ -3,14 +3,14 @@
 #include <cpr/cpr.h>
 
 // TODO: 継承時のpublicなどの使い分けは?
-class QueueManager: public RunParallel {
+class QueueManager : public RunParallel {
 private:
     proxy::request loadRequest(std::filesystem::directory_entry entry) {
         proxy::request p;
         // TODO: handler file cannot load
         std::ifstream reqfile(entry.path(), std::ifstream::in);
         if (reqfile.is_open()) {
-            auto j= nlohmann::json::parse(reqfile);
+            auto j = nlohmann::json::parse(reqfile);
             p = j;
         }
         reqfile.close();
@@ -28,8 +28,7 @@ private:
             return cpr::Post(
                     url,
                     cpr::Body{p.body},
-                    headers
-            );
+                    headers);
         }
 
         if (p.method == proxy::METHOD_GET) {
@@ -47,21 +46,20 @@ private:
 
 public:
     int run() override {
-        for (;;)
-        {
+        for (;;) {
 
             if (QueueManager::m_stop) {
                 break;
             }
 
             std::string path = QUEUE_REQ_DIR + "/";
-            for (const auto & entry : std::filesystem::directory_iterator(path)) {
+            for (const auto &entry : std::filesystem::directory_iterator(path)) {
                 std::cout << entry.path() << std::endl;
 
                 proxy::request p;
                 try {
                     p = loadRequest(entry);
-                } catch (std::exception& e) {
+                } catch (std::exception &e) {
                     std::cerr << "exception" << e.what();
                     break;
                 } catch (...) {
@@ -87,4 +85,3 @@ public:
         return 1;
     }
 };
-

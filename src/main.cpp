@@ -1,18 +1,18 @@
-#include "queue/queue.h"
 #include "connection/connection.h"
+#include "queue/queue.h"
 
 // TODO:このあたりのutility関数はどこにおくときれいになる?
 std::string createHash(std::string host, std::string body) {
-    return std::to_string(std::hash<std::string>{}(host+body));
+    return std::to_string(std::hash<std::string>{}(host + body));
 };
 
 void createDir(std::string path) {
-    try{
-        if(std::filesystem::create_directory(path))
+    try {
+        if (std::filesystem::create_directory(path))
             std::cout << "created " << path << std::endl;
         else
             std::cerr << "failed create" << path << std::endl;
-    } catch(const std::exception& e){
+    } catch (const std::exception &e) {
         std::cerr << e.what() << std::endl;
     }
 }
@@ -24,8 +24,7 @@ void createDefaultDir() {
     createDir(QUEUE_RES_DIR);
 }
 
-int main()
-{
+int main() {
     std::filesystem::remove_all(ROOT_DIR);
     createDefaultDir();
     QueueManager queueManager;
@@ -33,12 +32,10 @@ int main()
     std::future<int> futureQueueManager = std::async(std::launch::async, &QueueManager::run, &queueManager);
     std::future<int> futureConnectionManager = std::async(std::launch::async, &ConnectionManager::run, &connectionManager);
 
-    for (;;)
-    {
+    for (;;) {
         std::string uri;
         std::cin >> uri;
-        if (uri == "exit")
-        {
+        if (uri == "exit") {
             queueManager.stop();
             break;
         }
@@ -48,8 +45,7 @@ int main()
         proxy::request p = {
                 "GET",
                 uri,
-                "body"
-        };
+                "body"};
         nlohmann::json j = p;
         ofs << j;
         ofs.close();

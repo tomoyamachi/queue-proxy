@@ -1,20 +1,21 @@
 #pragma once
-#include <iostream>
-#include <string>
-#include <thread>
-#include <chrono>
 #include <atomic>
-#include <unordered_map>
-#include <mutex>
-#include <future>
+#include <chrono>
 #include <filesystem>
 #include <fstream>
-#include <stdio.h>
+#include <future>
+#include <iostream>
+#include <mutex>
 #include <nlohmann/json.hpp>
+#include <stdio.h>
+#include <string>
+#include <thread>
+#include <unordered_map>
 
 class RunParallel {
 protected:
-    std::atomic<bool> m_stop{ false };
+    std::atomic<bool> m_stop{false};
+
 public:
     virtual int run() = 0;
     void stop() {
@@ -22,15 +23,14 @@ public:
     };
 };
 
-std::string GetEnvOrDefault(const std::string& variable_name, const std::string& default_value)
-{
-    const char* value = getenv(variable_name.c_str());
+std::string GetEnvOrDefault(const std::string &variable_name, const std::string &default_value) {
+    const char *value = getenv(variable_name.c_str());
     return value ? value : default_value;
 }
 
 
 // 型を指定した状態で環境変数を読み込むことができるライブラリはないか
-const std::string ROOT_DIR = GetEnvOrDefault("ROOT_DIR","tmp");
+const std::string ROOT_DIR = GetEnvOrDefault("ROOT_DIR", "tmp");
 const std::string QUEUE_DIR = ROOT_DIR + "/queue";
 const std::string QUEUE_REQ_DIR = QUEUE_DIR + "/req";
 const std::string QUEUE_RES_DIR = QUEUE_DIR + "/response";
@@ -56,13 +56,12 @@ namespace proxy {
     // TODO : もっとシンプルに書けるか
     void to_json(nlohmann::json &j, const request &p) {
         j = nlohmann::json{
-            {"method",   p.method},
-            {"uri",    p.uri},
-            {"body", p.body},
-            {"content_length", p.content_length},
-            {"headers", p.headers},
-            {"remote_address", p.remote_address}
-        };
+                {"method", p.method},
+                {"uri", p.uri},
+                {"body", p.body},
+                {"content_length", p.content_length},
+                {"headers", p.headers},
+                {"remote_address", p.remote_address}};
     }
 
     void from_json(const nlohmann::json &j, request &p) {
@@ -73,4 +72,4 @@ namespace proxy {
         j.at("headers").get_to(p.headers);
         j.at("remote_address").get_to(p.remote_address);
     }
-}
+}// namespace proxy
