@@ -1,5 +1,6 @@
 #pragma once
 #include "../common.hpp"
+#include "../run_parallel.hpp"
 
 namespace ProxyQueue {
     class ConnectionManager : public RunParallel {

@@ -1,13 +1,14 @@
 #pragma once
 #include "../common.hpp"
+#include "../run_parallel.hpp"
 #include <cpr/cpr.h>
 
 namespace ProxyQueue {
     // TODO: 継承時のpublicなどの使い分けは?
     class QueueManager : public RunParallel {
     private:
-        request loadRequest(std::filesystem::directory_entry entry) {
-            request p;
+        Request loadRequest(std::filesystem::directory_entry entry) {
+            Request p;
             // TODO: handler file cannot load
             std::ifstream reqfile(entry.path(), std::ifstream::in);
             if (reqfile.is_open()) {
@@ -21,7 +22,7 @@ namespace ProxyQueue {
             return p;
         }
 
-        cpr::Response requestFromParams(ProxyQueue::request p) {
+        cpr::Response requestFromParams(ProxyQueue::Request p) {
             auto url = cpr::Url{p.uri};
             auto headers = cpr::Header{{"content-type", "json"}};
 
@@ -57,7 +58,7 @@ namespace ProxyQueue {
                 for (const auto &entry : std::filesystem::directory_iterator(path)) {
                     // std::cout << entry.path() << std::endl;
                     spdlog::debug("entry.path = " + entry.path().string());
-                    ProxyQueue::request p;
+                    ProxyQueue::Request p;
                     try {
                         p = loadRequest(entry);
                     } catch (std::exception &e) {
@@ -74,7 +75,7 @@ namespace ProxyQueue {
                     // insert response data to file
                     auto file = entry.path().filename();
                     std::ofstream ofs(QUEUE_RES_DIR + "/" + entry.path().filename().string());
-                    auto proxyResp = ProxyQueue::response{response.status_code,
+                    auto proxyResp = ProxyQueue::Response{response.status_code,
                                                           response.text};
                     nlohmann::json j = proxyResp;
                     ofs << j;

@@ -1,5 +1,4 @@
 #pragma once
-#include <atomic>
 #include <chrono>
 #include <cstdlib>// stdlib(c言語)のc++ version
 #include <filesystem>
@@ -39,8 +38,6 @@ namespace ProxyQueue {
     const int CONNECTION_DURATION = GetEnvOrDefault("CONNECTION_DURATION", 10000);
     const int REQUEST_DURATION = GetEnvOrDefault("REQUEST_DURATION", 1000);
 
-
-    // 標準ライブラリにhttpmethodが入っていないか
     const std::string METHOD_POST = "POST";
     const std::string METHOD_GET = "GET";
     const std::string METHOD_PUT = "PUT";
@@ -50,17 +47,17 @@ namespace ProxyQueue {
         return std::to_string(std::hash<std::string>{}(host + body));
     };
 
-    struct request {
+    struct Request {
         std::string method;
         std::string uri;
         std::string body;
-        int64_t content_length;
+        // int64_t 確実にサイズが保証。 int, long サイズがコンパイラ依存
+        std::int64_t content_length;
         std::string headers;
         std::string remote_address;
     };
 
-    // TODO : もっとシンプルに書けるか
-    inline void to_json(nlohmann::json &j, const request &p) {
+    inline void to_json(nlohmann::json &j, const Request &p) {
         j = nlohmann::json{
                 {"method", p.method},
                 {"uri", p.uri},
@@ -70,7 +67,7 @@ namespace ProxyQueue {
                 {"remote_address", p.remote_address}};
     }
 
-    inline void from_json(const nlohmann::json &j, request &p) {
+    inline void from_json(const nlohmann::json &j, Request &p) {
         j.at("method").get_to(p.method);
         j.at("uri").get_to(p.uri);
         j.at("body").get_to(p.body);
@@ -79,29 +76,18 @@ namespace ProxyQueue {
         j.at("remote_address").get_to(p.remote_address);
     }
 
-    struct response {
+    struct Response {
         int status_code;
         std::string body;
     };
-    inline void to_json(nlohmann::json &j, const response &p) {
+    inline void to_json(nlohmann::json &j, const Response &p) {
         j = nlohmann::json{
                 {"code", p.status_code},
                 {"body", p.body}};
     }
 
-    inline void from_json(const nlohmann::json &j, response &p) {
+    inline void from_json(const nlohmann::json &j, Response &p) {
         j.at("code").get_to(p.status_code);
         j.at("body").get_to(p.body);
     }
-
-    class RunParallel {
-    protected:
-        std::atomic<bool> m_stop{false};
-
-    public:
-        virtual int run() = 0;
-        void stop() {
-            m_stop = true;
-        };
-    };
 }// namespace ProxyQueue

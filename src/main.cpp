@@ -15,7 +15,7 @@ namespace ProxyQueue {
         CreateDirectory(QUEUE_RES_DIR);
     }
 
-    std::optional<response> LoadResponse(const std::string &filename) {
+    std::optional<Response> LoadResponse(const std::string &filename) {
         std::ifstream resfile(filename);
         if (!resfile) {
             return std::nullopt;
@@ -23,7 +23,7 @@ namespace ProxyQueue {
         spdlog::debug("response file exists:");
         std::cout << resfile.rdbuf() << std::endl;
         // auto j = nlohmann::json::parse(resfile);
-        response p = response{
+        Response p = Response{
                 .status_code = 200,
                 .body = "body",
         };
@@ -74,7 +74,7 @@ int main() {
         }
 
         std::ofstream ofs(requestFile);
-        request p = {
+        Request p = {
                 .method = "GET",
                 .uri = uri,
                 .body = "body"};
