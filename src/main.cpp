@@ -34,7 +34,7 @@ namespace ProxyQueue {
 int main() {
     using namespace ProxyQueue;
     spdlog::set_level(spdlog::level::debug);
-    spdlog::info("loggers can be retrieved from a global registry using the spdlog::get(logger_name)");
+    spdlog::info("const ROOT_DIR {}, CONNECTION_DURATION {}, REQUEST_DURATION {}", ROOT_DIR, CONNECTION_DURATION, REQUEST_DURATION);
 
     std::filesystem::remove_all(ROOT_DIR);
 
