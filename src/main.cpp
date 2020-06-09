@@ -24,6 +24,32 @@ void createDefaultDir() {
     createDir(QUEUE_RES_DIR);
 }
 
+// TODO: loadRequestと似た構造なのでtemplateとしてつくりたい
+// TODO: fileがなければfalseのような場合はどのように実装する? pointerで返してnilなら何もないとかにしたほうがよさそう
+proxy::response loadResponse(std::string filename) {
+    proxy::response p;
+    std::ifstream resfile(filename, std::ifstream::in);
+    if (resfile.is_open()) {
+        std::cout << "response file exist:" << std::endl;
+        std::cout << resfile.rdbuf() << std::endl;
+        //        auto j = nlohmann::json::parse(resfile);
+        //        p = j;
+    }
+    resfile.close();
+    return p;
+}
+
+bool foundResponseFile(std::string filename) {
+    std::ifstream ifile;
+    ifile.open(filename);
+    if (ifile) {
+        ifile.close();
+        return true;
+    } else {
+        return false;
+    }
+}
+
 int main() {
     std::filesystem::remove_all(ROOT_DIR);
     createDefaultDir();
@@ -41,7 +67,17 @@ int main() {
         }
 
         auto hashed = createHash(uri, "");
+        auto responseFile = QUEUE_RES_DIR + "/" + hashed;
+        if (foundResponseFile(responseFile)) {
+            loadResponse(responseFile);
+
+            // delete response file
+            std::cout << "delete " << responseFile << std::filesystem::remove(responseFile) << std::endl;
+            continue;
+        }
+
         std::ofstream ofs(QUEUE_REQ_DIR + "/" + hashed);
+        // TODO: keyを指定して設定したい
         proxy::request p = {
                 "GET",
                 uri,

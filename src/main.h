@@ -36,6 +36,7 @@ const std::string QUEUE_REQ_DIR = QUEUE_DIR + "/req";
 const std::string QUEUE_RES_DIR = QUEUE_DIR + "/response";
 const std::string CONNECTION_PATH = ROOT_DIR + "/connection.json";
 const int CONNECTION_DURATION = 100000;
+const int REQUEST_DURATION = 1000;
 
 namespace proxy {
     // 標準ライブラリにhttpmethodが入っていないか
@@ -72,4 +73,20 @@ namespace proxy {
         j.at("headers").get_to(p.headers);
         j.at("remote_address").get_to(p.remote_address);
     }
+
+    struct response {
+        int status_code;
+        std::string body;
+    };
+    void to_json(nlohmann::json &j, const response &p) {
+        j = nlohmann::json{
+                {"code", p.status_code},
+                {"body", p.body}};
+    }
+
+    void from_json(const nlohmann::json &j, response &p) {
+        j.at("code").get_to(p.status_code);
+        j.at("body").get_to(p.body);
+    }
+
 }// namespace proxy

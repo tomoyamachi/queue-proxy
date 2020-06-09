@@ -54,33 +54,37 @@ public:
 
             std::string path = QUEUE_REQ_DIR + "/";
             for (const auto &entry : std::filesystem::directory_iterator(path)) {
-                std::cout << entry.path() << std::endl;
+                // std::cout << entry.path() << std::endl;
 
                 proxy::request p;
                 try {
                     p = loadRequest(entry);
                 } catch (std::exception &e) {
-                    std::cerr << "exception" << e.what();
+                    std::cerr << "exception : " << e.what() << std::endl;
                     break;
                 } catch (...) {
-                    std::cerr << "another";
+                    std::cerr << "another" << std::endl;
                     break;
                 }
 
                 auto response = requestFromParams(p);
 
-                std::cout << response.text << std::endl;
+                // std::cout << response.text << std::endl;
                 // insert response data to file
                 auto file = entry.path().filename();
                 std::ofstream ofs(QUEUE_RES_DIR + "/" + entry.path().filename().string());
-                ofs << "status:" << response.status_code << std::endl;
-                //ofs << "header:" << response.header << std::endl;
-                ofs << "body:" << response.text << std::endl;
+                auto proxyResp = proxy::response{response.status_code,
+                                                 response.text};
+                nlohmann::json j = proxyResp;
+                ofs << j;
                 ofs.close();
 
                 // TODO: handle error
                 std::cout << "delete " << entry.path() << std::filesystem::remove(entry.path()) << std::endl;
             }
+
+            // TODO: sleep_forがないと、remove後もファイルが残る。なんとかしたい
+            std::this_thread::sleep_for(std::chrono::milliseconds(REQUEST_DURATION));
         }
         return 1;
     }
