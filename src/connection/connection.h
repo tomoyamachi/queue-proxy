@@ -2,12 +2,10 @@
 #include "../main.h"
 class ConnectionManager: public RunParallel {
 public:
-
     int run() override {
         int i = 0;
         for (;;)
         {
-
             if (ConnectionManager::m_stop) {
                 break;
             }
@@ -21,4 +19,3 @@ public:
         return 1;
     }
 };
-

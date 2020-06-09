@@ -1,6 +1,7 @@
 #include "queue/queue.h"
 #include "connection/connection.h"
 
+// TODO:このあたりのutility関数はどこにおくときれいになる?
 std::string createHash(std::string host, std::string body) {
     return std::to_string(std::hash<std::string>{}(host+body));
 };
@@ -32,7 +33,6 @@ int main()
     std::future<int> futureQueueManager = std::async(std::launch::async, &QueueManager::run, &queueManager);
     std::future<int> futureConnectionManager = std::async(std::launch::async, &ConnectionManager::run, &connectionManager);
 
-
     for (;;)
     {
         std::string uri;
@@ -56,6 +56,4 @@ int main()
     }
     const int resultQueueManager = futureQueueManager.get();
     const int resultConnectionManager = futureConnectionManager.get();
-    std::cout << "queue: " << resultQueueManager << " connection: " << resultConnectionManager << "\n";
-    std::cout << "End main()\n";
 }

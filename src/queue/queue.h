@@ -2,6 +2,7 @@
 #include "../main.h"
 #include <cpr/cpr.h>
 
+// TODO: 継承時のpublicなどの使い分けは?
 class QueueManager: public RunParallel {
 private:
     proxy::request loadRequest(std::filesystem::directory_entry entry) {
@@ -20,7 +21,6 @@ private:
     }
 
     cpr::Response requestFromParams(proxy::request p) {
-        // TODO : transaction
         auto url = cpr::Url{p.uri};
         auto headers = cpr::Header{{"content-type", "json"}};
 
