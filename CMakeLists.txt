@@ -11,4 +11,4 @@ add_executable(queue-proxy
 )
 
 target_link_libraries(queue-proxy ${CPR_LIBRARIES})
-include_directories(${CPR_INCLUDE_DIRS} ${JSON_INCLUDE_DIRS})
+include_directories(${CPR_INCLUDE_DIRS} ${JSON_INCLUDE_DIRS} ${LOG_INCLUDE_DIRS})

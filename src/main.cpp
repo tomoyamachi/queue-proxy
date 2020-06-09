@@ -30,7 +30,7 @@ proxy::response loadResponse(std::string filename) {
     proxy::response p;
     std::ifstream resfile(filename, std::ifstream::in);
     if (resfile.is_open()) {
-        std::cout << "response file exist:" << std::endl;
+        spdlog::debug("response file exist:");
         std::cout << resfile.rdbuf() << std::endl;
         //        auto j = nlohmann::json::parse(resfile);
         //        p = j;
@@ -51,6 +51,9 @@ bool foundResponseFile(std::string filename) {
 }
 
 int main() {
+    spdlog::set_level(spdlog::level::debug);
+    spdlog::info("loggers can be retrieved from a global registry using the spdlog::get(logger_name)");
+
     std::filesystem::remove_all(ROOT_DIR);
     createDefaultDir();
     QueueManager queueManager;
@@ -72,7 +75,8 @@ int main() {
             loadResponse(responseFile);
 
             // delete response file
-            std::cout << "delete " << responseFile << std::filesystem::remove(responseFile) << std::endl;
+            std::filesystem::remove(responseFile);
+            spdlog::debug("delete " + responseFile);
             continue;
         }
 

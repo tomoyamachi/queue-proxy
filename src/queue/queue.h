@@ -55,7 +55,7 @@ public:
             std::string path = QUEUE_REQ_DIR + "/";
             for (const auto &entry : std::filesystem::directory_iterator(path)) {
                 // std::cout << entry.path() << std::endl;
-
+                spdlog::debug("entry.path = " + entry.path().string());
                 proxy::request p;
                 try {
                     p = loadRequest(entry);

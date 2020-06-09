@@ -7,6 +7,8 @@
 #include <iostream>
 #include <mutex>
 #include <nlohmann/json.hpp>
+#include <spdlog/sinks/stdout_color_sinks.h>
+#include <spdlog/spdlog.h>
 #include <stdio.h>
 #include <string>
 #include <thread>
