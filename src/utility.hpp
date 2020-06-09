@@ -1,3 +1,4 @@
+#include <string>
 
 namespace ProxyQueue {
     inline std::string CreateHash(const std::string &host, const std::string &body) {

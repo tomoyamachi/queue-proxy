@@ -6,8 +6,8 @@ namespace ProxyQueue {
     // TODO: 継承時のpublicなどの使い分けは?
     class QueueManager : public RunParallel {
     private:
-        ProxyQueue::request loadRequest(std::filesystem::directory_entry entry) {
-            ProxyQueue::request p;
+        request loadRequest(std::filesystem::directory_entry entry) {
+            request p;
             // TODO: handler file cannot load
             std::ifstream reqfile(entry.path(), std::ifstream::in);
             if (reqfile.is_open()) {

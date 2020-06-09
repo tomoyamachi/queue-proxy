@@ -2,48 +2,35 @@
 #include "queue/queue.hpp"
 
 namespace ProxyQueue {
-    void CreateDir(const std::string &path) {
+    void CreateDirectory(const std::string &path) {
         try {
-            if (std::filesystem::create_directory(path))
-                std::cout << "created " << path << std::endl;
+            if (std::filesystem::create_directories(path))
+                spdlog::info("create {}", path);
             else
-                std::cerr << "failed create" << path << std::endl;
+                spdlog::error("failed create {}", path);
         } catch (const std::exception &e) {
-            std::cerr << e.what() << std::endl;
+            spdlog::error("failed create {}", e.what());
         }
     }
 
-    void CreateDefaultDir() {
-        CreateDir(ROOT_DIR);
-        CreateDir(QUEUE_DIR);
-        CreateDir(QUEUE_REQ_DIR);
-        CreateDir(QUEUE_RES_DIR);
+    void CreateDefaultDirectory() {
+        CreateDirectory(QUEUE_REQ_DIR);
+        CreateDirectory(QUEUE_RES_DIR);
     }
 
-    // TODO: loadRequestと似た構造なのでtemplateとしてつくりたい
-    // TODO: fileがなければfalseのような場合はどのように実装する? pointerで返してnilなら何もないとかにしたほうがよさそう
-    response LoadResponse(const std::string &filename) {
-        response p;
-        std::ifstream resfile(filename, std::ifstream::in);
-        if (resfile.is_open()) {
-            spdlog::debug("response file exist:");
-            std::cout << resfile.rdbuf() << std::endl;
-            //        auto j = nlohmann::json::parse(resfile);
-            //        p = j;
+    std::optional<response> LoadResponse(const std::string &filename) {
+        std::ifstream resfile(filename);
+        if (!resfile) {
+            return std::nullopt;
         }
-        resfile.close();
+        spdlog::debug("response file exists:");
+        std::cout << resfile.rdbuf() << std::endl;
+        // auto j = nlohmann::json::parse(resfile);
+        response p = response{
+                .status_code = 200,
+                .body = "body",
+        };
         return p;
-    }
-
-    bool foundResponseFile(const std::string &filename) {
-        std::ifstream ifile;
-        ifile.open(filename);
-        if (ifile) {
-            ifile.close();
-            return true;
-        } else {
-            return false;
-        }
     }
 }// namespace ProxyQueue
 
@@ -53,7 +40,7 @@ int main() {
     spdlog::info("loggers can be retrieved from a global registry using the spdlog::get(logger_name)");
 
     std::filesystem::remove_all(ROOT_DIR);
-    CreateDefaultDir();
+    CreateDefaultDirectory();
     QueueManager queueManager;
     ConnectionManager connectionManager;
     std::future<int> futureQueueManager = std::async(std::launch::async, &QueueManager::run, &queueManager);
@@ -69,12 +56,11 @@ int main() {
 
         auto hashed = CreateHash(uri, "");
         auto responseFile = QUEUE_RES_DIR + "/" + hashed;
-        if (foundResponseFile(responseFile)) {
-            LoadResponse(responseFile);
-
+        if (auto result = LoadResponse(responseFile)) {
             // delete response file
             std::filesystem::remove(responseFile);
             spdlog::debug("delete " + responseFile);
+            spdlog::debug("response " + result->body);
             continue;
         }
 

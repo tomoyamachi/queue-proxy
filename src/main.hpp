@@ -8,13 +8,13 @@
 #include <iostream>
 #include <mutex>
 #include <nlohmann/json.hpp>
+#include <optional>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
 #include <stdio.h>
 #include <string>
 #include <thread>
 #include <unordered_map>
-
 namespace ProxyQueue {
     std::string GetEnvOrDefault(const std::string &variable_name, const std::string &default_value);
     // 型を指定した状態で環境変数を読み込むことができるライブラリはないか
