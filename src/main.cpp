@@ -3,13 +3,10 @@
 
 namespace ProxyQueue {
     void CreateDirectory(const std::string &path) {
-        try {
-            if (std::filesystem::create_directories(path))
-                spdlog::info("create {}", path);
-            else
-                spdlog::error("failed create {}", path);
-        } catch (const std::exception &e) {
-            spdlog::error("failed create {}", e.what());
+        if (std::filesystem::create_directories(path)) {
+            spdlog::info("create {}", path);
+        } else {
+            spdlog::error("failed create {}", path);
         }
     }
 
@@ -40,7 +37,14 @@ int main() {
     spdlog::info("loggers can be retrieved from a global registry using the spdlog::get(logger_name)");
 
     std::filesystem::remove_all(ROOT_DIR);
-    CreateDefaultDirectory();
+
+    try {
+        CreateDefaultDirectory();
+    } catch (const std::exception &e) {
+        spdlog::error("failed create {}", e.what());
+        return 1;
+    }
+
     QueueManager queueManager;
     ConnectionManager connectionManager;
     std::future<int> futureQueueManager = std::async(std::launch::async, &QueueManager::run, &queueManager);
@@ -54,8 +58,8 @@ int main() {
             break;
         }
 
-        auto hashed = CreateHash(uri, "");
-        auto responseFile = QUEUE_RES_DIR + "/" + hashed;
+        const std::string uniqueID = CreateHash(uri, "");
+        const std::string responseFile = QUEUE_RES_DIR + "/" + uniqueID;
         if (auto result = LoadResponse(responseFile)) {
             // delete response file
             std::filesystem::remove(responseFile);
@@ -64,16 +68,19 @@ int main() {
             continue;
         }
 
-        std::ofstream ofs(QUEUE_REQ_DIR + "/" + hashed);
-        // TODO: keyを指定して設定したい
+        const std::string requestFile = QUEUE_REQ_DIR + "/" + uniqueID;
+        if (std::filesystem::exists(requestFile)) {
+            continue;
+        }
+
+        std::ofstream ofs(requestFile);
         request p = {
-                "GET",
-                uri,
-                "body"};
+                .method = "GET",
+                .uri = uri,
+                .body = "body"};
         nlohmann::json j = p;
         ofs << j;
-        ofs.close();
     }
-    const int resultQueueManager = futureQueueManager.get();
-    const int resultConnectionManager = futureConnectionManager.get();
+    //    const int resultQueueManager = futureQueueManager.get();
+    //    const int resultConnectionManager = futureConnectionManager.get();
 }

@@ -1,5 +1,5 @@
 #pragma once
-#include "../main.hpp"
+#include "../common.hpp"
 #include <cpr/cpr.h>
 
 namespace ProxyQueue {
