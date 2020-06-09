@@ -4,3 +4,6 @@
 [submodule "include/json"]
 	path = include/json
 	url = https://github.com/nlohmann/json.git
+[submodule "include/httplib"]
+	path = include/httplib
+	url = https://github.com/yhirose/cpp-httplib

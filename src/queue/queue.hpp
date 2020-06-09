@@ -1,9 +1,18 @@
 #pragma once
 #include "../common.hpp"
 #include "../run_parallel.hpp"
-#include <cpr/cpr.h>
+#include <httplib.h>
 
 namespace ProxyQueue {
+    bool DeleteFile(std::string filePath) {
+        if (const bool removeResult = std::filesystem::remove(filePath)) {
+            spdlog::debug("delete request file {}, result {}", filePath, removeResult);
+            return true;
+        }
+        spdlog::error("failed to delete request file {]", filePath);
+        return false;
+    }
+
     class QueueManager : public RunParallel {
     private:
         std::optional<Request> loadRequest(const std::string &filePath) {
@@ -18,28 +27,37 @@ namespace ProxyQueue {
             return p;
         }
 
-        cpr::Response requestFromParams(ProxyQueue::Request p) {
-            auto url = cpr::Url{p.uri};
-            auto headers = cpr::Header{{"content-type", "json"}};
 
+        std::optional<ProxyQueue::Response> requestFromParams(ProxyQueue::Request p) {
+            auto cli = httplib::Client2(p.uri.c_str());
+            if (!cli.is_valid()) {
+                throw std::runtime_error("invalid url format : " + p.uri);
+            }
+            httplib::Headers headers = {
+                    {"Accept-Encoding", "gzip, deflate"}};
+            httplib::Params params{
+                    {"name", "john"},
+                    {"note", "coder"}};
+
+            std::shared_ptr<httplib::Response> res;
             if (p.method == ProxyQueue::METHOD_POST) {
-                return cpr::Post(
-                        url,
-                        cpr::Body{p.body},
-                        headers);
+                res = cli.Post("/", headers, params);
+            } else if (p.method == ProxyQueue::METHOD_GET) {
+                res = cli.Get("/get");
+            } else if (p.method == ProxyQueue::METHOD_PUT) {
+                res = cli.Put("/", headers, params);
+            } else if (p.method == ProxyQueue::METHOD_DELETE) {
+                res = cli.Delete("/", headers);
+            } else {
+                throw std::runtime_error("not supported http method : " + p.method);
             }
-
-            if (p.method == ProxyQueue::METHOD_GET) {
-                return cpr::Get(url, headers);
+            if (!res) {
+                return std::nullopt;
             }
-            if (p.method == ProxyQueue::METHOD_PUT) {
-                return cpr::Put(url, headers);
-            }
-            if (p.method == ProxyQueue::METHOD_DELETE) {
-                return cpr::Delete(url, headers);
-            }
-
-            throw "http method : " + p.method;
+            return ProxyQueue::Response{
+                    res->status,
+                    res->body,
+            };
         }
 
     public:
@@ -68,25 +86,30 @@ namespace ProxyQueue {
                         break;
                     }
 
-                    cpr::Response response = requestFromParams(p);
-
                     if (std::filesystem::exists(responseFile)) {
                         continue;
                     }
 
+                    ProxyQueue::Response proxyResp;
+                    try {
+                        if (auto r = requestFromParams(p)) {
+                            proxyResp = r.value();
+                        }
+                        // TODO: responseがない場合の処理をどうするか考える
+                    } catch (std::exception &e) {
+                        spdlog::error("request {}", e.what());
+                        DeleteFile(requestFile);
+                        continue;
+                    } catch (...) {
+                        spdlog::error("something wrong");
+                        continue;
+                    }
+
                     std::ofstream ofs(responseFile);
-                    auto proxyResp = ProxyQueue::Response{response.status_code,
-                                                          response.text};
                     nlohmann::json j = proxyResp;
                     ofs << j;
-
-                    if (const bool removeResult = std::filesystem::remove(requestFile)) {
-                        spdlog::info("delete request file {}, result {}", requestFile, removeResult);
-                    } else {
-                        spdlog::error("failed to delete request file {}, result {}", requestFile, removeResult);
-                    }
+                    DeleteFile(requestFile);
                 }
-
                 std::this_thread::sleep_for(std::chrono::milliseconds(REQUEST_DURATION));
             }
             return 1;

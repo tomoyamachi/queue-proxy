@@ -1,4 +1,6 @@
 #pragma once
+#define CPPHTTPLIB_OPENSSL_SUPPORT
+
 #include <chrono>
 #include <cstdlib>// stdlib(c言語)のc++ version
 #include <filesystem>
