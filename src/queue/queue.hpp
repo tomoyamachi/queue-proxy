@@ -4,20 +4,16 @@
 #include <cpr/cpr.h>
 
 namespace ProxyQueue {
-    // TODO: 継承時のpublicなどの使い分けは?
     class QueueManager : public RunParallel {
     private:
-        Request loadRequest(std::filesystem::directory_entry entry) {
-            Request p;
-            // TODO: handler file cannot load
-            std::ifstream reqfile(entry.path(), std::ifstream::in);
-            if (reqfile.is_open()) {
-                auto j = nlohmann::json::parse(reqfile);
-                p = j;
+        std::optional<Request> loadRequest(const std::string &filePath) {
+            std::ifstream reqfile(filePath);
+            if (!reqfile) {
+                return std::nullopt;
             }
-            reqfile.close();
+            Request p = nlohmann::json::parse(reqfile);
             if (p.uri == "") {
-                throw "load proxy::request";
+                throw std::runtime_error("request uri is empty.");
             }
             return p;
         }
@@ -56,36 +52,41 @@ namespace ProxyQueue {
 
                 std::string path = QUEUE_REQ_DIR + "/";
                 for (const auto &entry : std::filesystem::directory_iterator(path)) {
-                    // std::cout << entry.path() << std::endl;
-                    spdlog::debug("entry.path = " + entry.path().string());
+                    const std::string requestFile = entry.path().string();
+                    const std::string responseFile = QUEUE_RES_DIR + "/" + entry.path().filename().string();
+
+                    spdlog::debug("entry.path = " + requestFile);
                     ProxyQueue::Request p;
                     try {
-                        p = loadRequest(entry);
+                        if (const auto op = loadRequest(requestFile)) {
+                            p = op.value();
+                        } else {
+                            continue;
+                        }
                     } catch (std::exception &e) {
-                        std::cerr << "exception : " << e.what() << std::endl;
-                        break;
-                    } catch (...) {
-                        std::cerr << "another" << std::endl;
+                        spdlog::error("requestFile {} : {}", requestFile, e.what());
                         break;
                     }
 
-                    auto response = requestFromParams(p);
+                    cpr::Response response = requestFromParams(p);
 
-                    // std::cout << response.text << std::endl;
-                    // insert response data to file
-                    auto file = entry.path().filename();
-                    std::ofstream ofs(QUEUE_RES_DIR + "/" + entry.path().filename().string());
+                    if (std::filesystem::exists(responseFile)) {
+                        continue;
+                    }
+
+                    std::ofstream ofs(responseFile);
                     auto proxyResp = ProxyQueue::Response{response.status_code,
                                                           response.text};
                     nlohmann::json j = proxyResp;
                     ofs << j;
-                    ofs.close();
 
-                    // TODO: handle error
-                    std::cout << "delete " << entry.path() << std::filesystem::remove(entry.path()) << std::endl;
+                    if (const bool removeResult = std::filesystem::remove(requestFile)) {
+                        spdlog::info("delete request file {}, result {}", requestFile, removeResult);
+                    } else {
+                        spdlog::error("failed to delete request file {}, result {}", requestFile, removeResult);
+                    }
                 }
 
-                // TODO: sleep_forがないと、remove後もファイルが残る。なんとかしたい
                 std::this_thread::sleep_for(std::chrono::milliseconds(REQUEST_DURATION));
             }
             return 1;
