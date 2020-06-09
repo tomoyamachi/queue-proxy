@@ -1,4 +1,5 @@
 #pragma once
+#include "utility.hpp"
 #include <atomic>
 #include <chrono>
 #include <filesystem>
