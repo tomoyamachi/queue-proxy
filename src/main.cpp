@@ -1,10 +1,8 @@
-#include "connection/connection.h"
-#include "queue/queue.h"
+#include "connection/connection.hpp"
+#include "queue/queue.hpp"
+#include "utility.hpp"
 
 // TODO:このあたりのutility関数はどこにおくときれいになる?
-std::string createHash(std::string host, std::string body) {
-    return std::to_string(std::hash<std::string>{}(host + body));
-};
 
 void createDir(std::string path) {
     try {
@@ -18,6 +16,7 @@ void createDir(std::string path) {
 }
 
 void createDefaultDir() {
+    using namespace ProxyQueue;
     createDir(ROOT_DIR);
     createDir(QUEUE_DIR);
     createDir(QUEUE_REQ_DIR);
@@ -26,8 +25,8 @@ void createDefaultDir() {
 
 // TODO: loadRequestと似た構造なのでtemplateとしてつくりたい
 // TODO: fileがなければfalseのような場合はどのように実装する? pointerで返してnilなら何もないとかにしたほうがよさそう
-proxy::response loadResponse(std::string filename) {
-    proxy::response p;
+ProxyQueue::response loadResponse(std::string filename) {
+    ProxyQueue::response p;
     std::ifstream resfile(filename, std::ifstream::in);
     if (resfile.is_open()) {
         spdlog::debug("response file exist:");
@@ -51,6 +50,7 @@ bool foundResponseFile(std::string filename) {
 }
 
 int main() {
+    using namespace ProxyQueue;
     spdlog::set_level(spdlog::level::debug);
     spdlog::info("loggers can be retrieved from a global registry using the spdlog::get(logger_name)");
 
@@ -69,7 +69,7 @@ int main() {
             break;
         }
 
-        auto hashed = createHash(uri, "");
+        auto hashed = ProxyQueue::createHash(uri, "");
         auto responseFile = QUEUE_RES_DIR + "/" + hashed;
         if (foundResponseFile(responseFile)) {
             loadResponse(responseFile);
@@ -82,7 +82,7 @@ int main() {
 
         std::ofstream ofs(QUEUE_REQ_DIR + "/" + hashed);
         // TODO: keyを指定して設定したい
-        proxy::request p = {
+        ProxyQueue::request p = {
                 "GET",
                 uri,
                 "body"};

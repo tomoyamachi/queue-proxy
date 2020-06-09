@@ -14,38 +14,28 @@
 #include <thread>
 #include <unordered_map>
 
-class RunParallel {
-protected:
-    std::atomic<bool> m_stop{false};
-
-public:
-    virtual int run() = 0;
-    void stop() {
-        m_stop = true;
-    };
-};
-
-std::string GetEnvOrDefault(const std::string &variable_name, const std::string &default_value) {
-    const char *value = getenv(variable_name.c_str());
-    return value ? value : default_value;
-}
+namespace ProxyQueue {
+    std::string GetEnvOrDefault(const std::string &variable_name, const std::string &default_value);
+    // 型を指定した状態で環境変数を読み込むことができるライブラリはないか
+    const std::string ROOT_DIR = GetEnvOrDefault("ROOT_DIR", "tmp");
+    const std::string QUEUE_DIR = ROOT_DIR + "/queue";
+    const std::string QUEUE_REQ_DIR = QUEUE_DIR + "/req";
+    const std::string QUEUE_RES_DIR = QUEUE_DIR + "/response";
+    const std::string CONNECTION_PATH = ROOT_DIR + "/connection.json";
+    const int CONNECTION_DURATION = 100000;
+    const int REQUEST_DURATION = 1000;
 
 
-// 型を指定した状態で環境変数を読み込むことができるライブラリはないか
-const std::string ROOT_DIR = GetEnvOrDefault("ROOT_DIR", "tmp");
-const std::string QUEUE_DIR = ROOT_DIR + "/queue";
-const std::string QUEUE_REQ_DIR = QUEUE_DIR + "/req";
-const std::string QUEUE_RES_DIR = QUEUE_DIR + "/response";
-const std::string CONNECTION_PATH = ROOT_DIR + "/connection.json";
-const int CONNECTION_DURATION = 100000;
-const int REQUEST_DURATION = 1000;
-
-namespace proxy {
     // 標準ライブラリにhttpmethodが入っていないか
     const std::string METHOD_POST = "POST";
     const std::string METHOD_GET = "GET";
     const std::string METHOD_PUT = "PUT";
     const std::string METHOD_DELETE = "DELETE";
+
+    std::string GetEnvOrDefault(const std::string &variable_name, const std::string &default_value) {
+        const char *value = getenv(variable_name.c_str());
+        return value ? value : default_value;
+    }
 
     struct request {
         std::string method;
@@ -91,4 +81,14 @@ namespace proxy {
         j.at("body").get_to(p.body);
     }
 
-}// namespace proxy
+    class RunParallel {
+    protected:
+        std::atomic<bool> m_stop{false};
+
+    public:
+        virtual int run() = 0;
+        void stop() {
+            m_stop = true;
+        };
+    };
+}// namespace ProxyQueue
