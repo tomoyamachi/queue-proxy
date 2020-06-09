@@ -7,3 +7,6 @@
 [submodule "include/httplib"]
 	path = include/httplib
 	url = https://github.com/yhirose/cpp-httplib
+[submodule "include/spdlog"]
+	path = include/spdlog
+	url = https://github.com/gabime/spdlog
