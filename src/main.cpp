@@ -22,7 +22,6 @@ namespace ProxyQueue {
         if (!resfile) {
             return std::nullopt;
         }
-        spdlog::debug("response file exists:");
         //std::cout << resfile.rdbuf() << std::endl;
         httplib::Response p = nlohmann::json::parse(resfile);
         return p;
@@ -37,19 +36,19 @@ namespace ProxyQueue {
         req2.target = req.target;
         req2.body = req.body;
 
+        // TODO : 他に方法がないか確認
         nlohmann::json j = req2;
         std::stringstream ss;
         ss << j;
-        std::cout << ss.str() << std::endl;
         return CreateHash(ss.str());
     }
 
 
     bool SaveAsRequestQueue(const std::string &requestFile, const httplib::Request &req) {
-        nlohmann::json j = req;
         if (std::filesystem::exists(requestFile)) {
             return false;
         }
+        nlohmann::json j = req;
         std::ofstream ofs(requestFile);
         ofs << j;
         return true;
@@ -74,7 +73,6 @@ int main() {
     std::future<int> futureQueueManager = std::async(std::launch::async, &QueueManager::run, &queueManager);
     std::future<int> futureConnectionManager = std::async(std::launch::async, &ConnectionManager::run, &connectionManager);
 
-
     // Start a proxy server
     httplib::Server svr;
     // TODO : [&] わからない
@@ -82,20 +80,21 @@ int main() {
         std::string uniqueID = CreateFileUniqueID(req);
         const std::string responseFile = QUEUE_RES_DIR + "/" + uniqueID;
         if (auto result = LoadResponse(responseFile)) {
-            // delete response file
+            //response using cached data
+            spdlog::debug("response found {}", responseFile);
             res = result.value();
-            std::filesystem::remove(responseFile);
-            spdlog::debug("delete " + responseFile);
+            DeleteFile(responseFile);
             return;
         }
 
         const std::string requestFile = QUEUE_REQ_DIR + "/" + uniqueID;
         if (!std::filesystem::exists(requestFile)) {
-            SaveAsRequestQueue(uniqueID, req);
+            spdlog::debug("save to request file: {}", requestFile);
+            SaveAsRequestQueue(requestFile, req);
         }
 
-        res.status = 302;
-        res.body = "please wait for access";
+        res.status = STATUS_TEMPRARY_REDIRECT;
+        res.body = "{\"msg\":\"please wait for access\"}";
     });
 
     // TODO : [&] にすると動かないのはなぜか調査
@@ -116,8 +115,6 @@ int main() {
         std::string s;
         char buf[BUFSIZ];
 
-        s += "================================\n";
-
         snprintf(buf, sizeof(buf), "%s %s %s", req.method.c_str(),
                  req.version.c_str(), req.path.c_str());
         s += buf;
@@ -132,10 +129,9 @@ int main() {
         }
         snprintf(buf, sizeof(buf), "%s\n", query.c_str());
         s += buf;
-        s += "--------------------------------\n";
         snprintf(buf, sizeof(buf), "%d\n", res.status);
         s += buf;
-        spdlog::error(s);
+        spdlog::debug(s);
     });
 
     svr.listen(PROXY_ADDRESS.c_str(), PROXY_PORT);
