@@ -1,6 +1,7 @@
 #pragma once
 #define CPPHTTPLIB_OPENSSL_SUPPORT
 
+#include <algorithm>// find
 #include <chrono>
 #include <cstdlib>// stdlib(c言語)のc++ version
 #include <filesystem>
@@ -14,10 +15,10 @@
 #include <thread>
 #include <unordered_map>
 
+#include <httplib.h>
 #include <nlohmann/json.hpp>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
-
 
 namespace ProxyQueue {
     template<class T>
@@ -32,6 +33,8 @@ namespace ProxyQueue {
         return default_value;
     }
 
+    const std::string PROXY_ADDRESS = GetEnvOrDefault<std::string>("PROXY_ADDRESS", "localhost");
+    const int PROXY_PORT = GetEnvOrDefault("PROXY_PORT", 1234);
     const std::string ROOT_DIR = GetEnvOrDefault<std::string>("ROOT_DIR", "tmp");
     const std::string QUEUE_DIR = ROOT_DIR + "/queue";
     const std::string QUEUE_REQ_DIR = QUEUE_DIR + "/req";
@@ -45,51 +48,73 @@ namespace ProxyQueue {
     const std::string METHOD_PUT = "PUT";
     const std::string METHOD_DELETE = "DELETE";
 
-    inline std::string CreateHash(const std::string &host, const std::string &body) {
-        return std::to_string(std::hash<std::string>{}(host + body));
+    // 307 Temporary Redirect https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/307
+    const int STATUS_TEMPRARY_REDIRECT = 307;
+
+    inline std::string CreateHash(const std::string &unique) {
+        return std::to_string(std::hash<std::string>{}(unique));
     };
 
-    struct Request {
-        std::string method;
-        std::string uri;
-        std::string body;
-        // int64_t 確実にサイズが保証。 int, long サイズがコンパイラ依存
-        std::int64_t content_length;
-        std::string headers;
-        std::string remote_address;
-    };
 
-    inline void to_json(nlohmann::json &j, const Request &p) {
-        j = nlohmann::json{
-                {"method", p.method},
-                {"uri", p.uri},
-                {"body", p.body},
-                {"content_length", p.content_length},
-                {"headers", p.headers},
-                {"remote_address", p.remote_address}};
-    }
+    // https://stackoverflow.com/questions/2616011/easy-way-to-parse-a-url-in-c-cross-platform
+    struct Uri {
+    public:
+        std::string QueryString, Path, Protocol, Host, Port;
 
-    inline void from_json(const nlohmann::json &j, Request &p) {
-        j.at("method").get_to(p.method);
-        j.at("uri").get_to(p.uri);
-        j.at("body").get_to(p.body);
-        j.at("content_length").get_to(p.content_length);
-        j.at("headers").get_to(p.headers);
-        j.at("remote_address").get_to(p.remote_address);
-    }
+        static Uri Parse(const std::string &uri) {
+            Uri result;
 
-    struct Response {
-        int status_code;
-        std::string body;
-    };
-    inline void to_json(nlohmann::json &j, const Response &p) {
-        j = nlohmann::json{
-                {"code", p.status_code},
-                {"body", p.body}};
-    }
+            typedef std::string::const_iterator iterator_t;
 
-    inline void from_json(const nlohmann::json &j, Response &p) {
-        j.at("code").get_to(p.status_code);
-        j.at("body").get_to(p.body);
-    }
+            if (uri.length() == 0)
+                return result;
+
+            iterator_t uriEnd = uri.end();
+
+            // get query start
+            iterator_t queryStart = std::find(uri.begin(), uriEnd, '?');
+
+            // protocol
+            iterator_t protocolStart = uri.begin();
+            iterator_t protocolEnd = std::find(protocolStart, uriEnd, ':');
+
+            if (protocolEnd != uriEnd) {
+                std::string prot = &*(protocolEnd);
+                if ((prot.length() > 3) && (prot.substr(0, 3) == "://")) {
+                    result.Protocol = std::string(protocolStart, protocolEnd);
+                    protocolEnd += 3;
+                } else
+                    protocolEnd = uri.begin();// no protocol
+            } else
+                protocolEnd = uri.begin();// no protocol
+
+            // host
+            iterator_t hostStart = protocolEnd;
+            iterator_t pathStart = std::find(hostStart, uriEnd, L'/');// get pathStart
+
+            iterator_t hostEnd = std::find(protocolEnd,
+                                           (pathStart != uriEnd) ? pathStart : queryStart,
+                                           ':');// check for port
+
+            result.Host = std::string(hostStart, hostEnd);
+
+            // port
+            if ((hostEnd != uriEnd) && ((&*(hostEnd))[0] == ':'))// we have a port
+            {
+                hostEnd++;
+                iterator_t portEnd = (pathStart != uriEnd) ? pathStart : queryStart;
+                result.Port = std::string(hostEnd, portEnd);
+            }
+
+            // path
+            if (pathStart != uriEnd)
+                result.Path = std::string(pathStart, queryStart);
+
+            // query
+            if (queryStart != uriEnd)
+                result.QueryString = std::string(queryStart, uri.end());
+            return result;
+
+        }// Parse
+    };   // uri
 }// namespace ProxyQueue

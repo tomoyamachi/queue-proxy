@@ -15,49 +15,50 @@ namespace ProxyQueue {
 
     class QueueManager : public RunParallel {
     private:
-        std::optional<Request> loadRequest(const std::string &filePath) {
+        std::optional<httplib::Request> loadRequest(const std::string &filePath) {
             std::ifstream reqfile(filePath);
             if (!reqfile) {
                 return std::nullopt;
             }
-            Request p = nlohmann::json::parse(reqfile);
-            if (p.uri == "") {
+            httplib::Request p = nlohmann::json::parse(reqfile);
+            if (p.target == "") {
                 throw std::runtime_error("request uri is empty.");
             }
             return p;
         }
 
 
-        std::optional<ProxyQueue::Response> requestFromParams(ProxyQueue::Request p) {
-            auto cli = httplib::Client2(p.uri.c_str());
-            if (!cli.is_valid()) {
-                throw std::runtime_error("invalid url format : " + p.uri);
+        std::optional<httplib::Response> requestFromParams(httplib::Request p) {
+            Uri url = Uri::Parse(p.target);
+            // TODO: client作成部分は httplib::Client か httplib::SSLClient のどちらかを返す関数をつくって、autoで設定したい
+            httplib::Client cli(url.Host);
+            // MEMO: OPENSSL_SUPPORTされてる前提でつくってもいいかも
+#ifdef CPPHTTPLIB_OPENSSL_SUPPORT
+            if (url.Protocol == "https") {
+                httplib::SSLClient cli(url.Host);
             }
-            httplib::Headers headers = {
-                    {"Accept-Encoding", "gzip, deflate"}};
-            httplib::Params params{
-                    {"name", "john"},
-                    {"note", "coder"}};
+#endif
 
+            if (!cli.is_valid()) {
+                throw std::runtime_error("invalid url format : " + p.target);
+            }
             std::shared_ptr<httplib::Response> res;
             if (p.method == ProxyQueue::METHOD_POST) {
-                res = cli.Post("/", headers, params);
+                res = cli.Post(url.Path.c_str(), p.headers, p.params);
             } else if (p.method == ProxyQueue::METHOD_GET) {
-                res = cli.Get("/get");
+                res = cli.Get(url.Path.c_str());
             } else if (p.method == ProxyQueue::METHOD_PUT) {
-                res = cli.Put("/", headers, params);
+                res = cli.Put(url.Path.c_str(), p.headers, p.params);
             } else if (p.method == ProxyQueue::METHOD_DELETE) {
-                res = cli.Delete("/", headers);
+                res = cli.Delete(url.Path.c_str(), p.headers);
             } else {
                 throw std::runtime_error("not supported http method : " + p.method);
             }
             if (!res) {
                 return std::nullopt;
             }
-            return ProxyQueue::Response{
-                    res->status,
-                    res->body,
-            };
+            // TODO: この記法でいいか確認
+            return *res;
         }
 
     public:
@@ -74,7 +75,7 @@ namespace ProxyQueue {
                     const std::string responseFile = QUEUE_RES_DIR + "/" + entry.path().filename().string();
 
                     spdlog::debug("entry.path = " + requestFile);
-                    ProxyQueue::Request p;
+                    httplib::Request p;
                     try {
                         if (const auto op = loadRequest(requestFile)) {
                             p = op.value();
@@ -90,7 +91,7 @@ namespace ProxyQueue {
                         continue;
                     }
 
-                    ProxyQueue::Response proxyResp;
+                    httplib::Response proxyResp;
                     try {
                         if (auto r = requestFromParams(p)) {
                             proxyResp = r.value();
