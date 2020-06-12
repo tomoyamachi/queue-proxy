@@ -7,3 +7,6 @@
 [submodule "include/spdlog"]
 	path = include/spdlog
 	url = https://github.com/gabime/spdlog
+[submodule "tests/include/gtest"]
+	path = tests/include/gtest
+	url = https://github.com/google/googletest.git

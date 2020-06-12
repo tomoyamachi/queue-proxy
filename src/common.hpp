@@ -14,8 +14,6 @@
 #include <string>
 #include <thread>
 #include <unordered_map>
-
-#include <httplib.h>
 #include <nlohmann/json.hpp>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
