@@ -1,5 +1,5 @@
 #pragma once
-#define CPPHTTPLIB_OPENSSL_SUPPORT
+#include <nlohmann/json.hpp>
 #include <httplib.h>
 
 namespace httplib {
