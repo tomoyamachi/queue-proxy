@@ -1,6 +1,7 @@
 #pragma once
 #include "../common.hpp"
 #include "../run_parallel.hpp"
+#include "../uri.hpp"
 #include <httplib.h>
 
 namespace ProxyQueue {
