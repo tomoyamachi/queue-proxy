@@ -12,3 +12,5 @@ if (OPENSSL_FOUND)
 endif (OPENSSL_FOUND)
 
 include_directories(${JSON_INCLUDE_DIRS} ${LOG_INCLUDE_DIRS} ${HTTPLIB_INCLUDE_DIRS})
+
+add_subdirectory(tests)
