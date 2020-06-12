@@ -33,11 +33,8 @@ namespace ProxyQueue {
         req2.target = req.target;
         req2.body = req.body;
 
-        // TODO : 他に方法がないか確認
         nlohmann::json j = req2;
-        std::stringstream ss;
-        ss << j;
-        return CreateHash(ss.str());
+        return CreateHash(j.dump());
     }
 
 

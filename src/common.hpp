@@ -1,6 +1,4 @@
 #pragma once
-#define CPPHTTPLIB_OPENSSL_SUPPORT
-
 #include <algorithm>// find
 #include <chrono>
 #include <cstdlib>// stdlib(c言語)のc++ version
@@ -47,7 +45,7 @@ namespace ProxyQueue {
     const std::string METHOD_DELETE = "DELETE";
 
     // 307 Temporary Redirect https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/307
-    const int STATUS_TEMPRARY_REDIRECT = 307;
+    constexpr int STATUS_TEMPRARY_REDIRECT = 307;
 
     inline std::string CreateHash(const std::string &unique) {
         return std::to_string(std::hash<std::string>{}(unique));

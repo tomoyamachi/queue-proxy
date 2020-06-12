@@ -9,19 +9,19 @@ namespace ProxyQueue {
         static Uri Parse(const std::string &uri) {
             Uri result;
 
-            typedef std::string::const_iterator iterator_t;
+            //typedef std::string::const_iterator iterator_t;
 
             if (uri.length() == 0)
                 return result;
 
-            iterator_t uriEnd = uri.end();
+            auto uriEnd = uri.end();
 
             // get query start
-            iterator_t queryStart = std::find(uri.begin(), uriEnd, '?');
+            auto queryStart = std::find(uri.begin(), uriEnd, '?');
 
             // protocol
-            iterator_t protocolStart = uri.begin();
-            iterator_t protocolEnd = std::find(protocolStart, uriEnd, ':');
+            auto protocolStart = uri.begin();
+            auto protocolEnd = std::find(protocolStart, uriEnd, ':');
 
             if (protocolEnd != uriEnd) {
                 std::string prot = &*(protocolEnd);
@@ -34,10 +34,10 @@ namespace ProxyQueue {
                 protocolEnd = uri.begin();// no protocol
 
             // host
-            iterator_t hostStart = protocolEnd;
-            iterator_t pathStart = std::find(hostStart, uriEnd, L'/');// get pathStart
+            auto hostStart = protocolEnd;
+            auto pathStart = std::find(hostStart, uriEnd, L'/');// get pathStart
 
-            iterator_t hostEnd = std::find(protocolEnd,
+            auto hostEnd = std::find(protocolEnd,
                                            (pathStart != uriEnd) ? pathStart : queryStart,
                                            ':');// check for port
 
@@ -47,7 +47,7 @@ namespace ProxyQueue {
             if ((hostEnd != uriEnd) && ((&*(hostEnd))[0] == ':'))// we have a port
             {
                 hostEnd++;
-                iterator_t portEnd = (pathStart != uriEnd) ? pathStart : queryStart;
+                auto portEnd = (pathStart != uriEnd) ? pathStart : queryStart;
                 result.Port = std::string(hostEnd, portEnd);
             }
 
