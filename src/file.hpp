@@ -3,7 +3,6 @@
 #include <string>
 
 namespace ProxyQueue {
-    // --@params
     void CreateDirectory(const std::string &path);
     void CreateDefaultDirectory();
     std::optional<httplib::Response> LoadResponse(const std::string &filename);
