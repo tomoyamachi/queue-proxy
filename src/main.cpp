@@ -1,59 +1,32 @@
 #include "connection/connection.hpp"
 #include "httplib_json.hpp"
 #include "queue/queue.hpp"
-
+#include "file.hpp"
 
 namespace ProxyQueue {
-    void CreateDirectory(const std::string &path) {
-        if (std::filesystem::create_directories(path)) {
-            spdlog::info("create {}", path);
-        } else {
-            spdlog::error("failed create {}", path);
+    void Log(const httplib::Request &req, const httplib::Response &res) {
+        std::string s;
+        char buf[BUFSIZ];
+
+        snprintf(buf, sizeof(buf), "%s %s %s", req.method.c_str(),
+                 req.version.c_str(), req.path.c_str());
+        s += buf;
+
+        std::string query;
+        for (auto it = req.params.begin(); it != req.params.end(); ++it) {
+            const auto &x = *it;
+            snprintf(buf, sizeof(buf), "%c%s=%s",
+                     (it == req.params.begin()) ? '?' : '&', x.first.c_str(),
+                     x.second.c_str());
+            query += buf;
         }
+        snprintf(buf, sizeof(buf), "%s\n", query.c_str());
+        s += buf;
+        snprintf(buf, sizeof(buf), "%d\n", res.status);
+        s += buf;
+        spdlog::debug(s);
     }
-
-    void CreateDefaultDirectory() {
-        CreateDirectory(QUEUE_REQ_DIR);
-        CreateDirectory(QUEUE_RES_DIR);
-    }
-
-    std::optional<httplib::Response> LoadResponse(const std::string &filename) {
-        std::ifstream resfile(filename);
-        if (!resfile) {
-            return std::nullopt;
-        }
-        //std::cout << resfile.rdbuf() << std::endl;
-        httplib::Response p = nlohmann::json::parse(resfile);
-        return p;
-    }
-
-
-    std::string CreateFileUniqueID(const httplib::Request &req) {
-        // TODO: ヘッダー/REMOTE_PORTなどがuniqueにならない
-        // filter fields
-        httplib::Request req2;
-        req2.method = req.method;
-        req2.target = req.target;
-        req2.body = req.body;
-
-        // TODO : 他に方法がないか確認
-        nlohmann::json j = req2;
-        std::stringstream ss;
-        ss << j;
-        return CreateHash(ss.str());
-    }
-
-
-    bool SaveAsRequestQueue(const std::string &requestFile, const httplib::Request &req) {
-        if (std::filesystem::exists(requestFile)) {
-            return false;
-        }
-        nlohmann::json j = req;
-        std::ofstream ofs(requestFile);
-        ofs << j;
-        return true;
-    }
-}// namespace ProxyQueue
+}
 
 int main() {
     using namespace ProxyQueue;
@@ -75,8 +48,7 @@ int main() {
 
     // Start a proxy server
     httplib::Server svr;
-    // TODO : [&] わからない
-    svr.Get(".*", [&](const httplib::Request &req, httplib::Response &res) {
+    svr.Get(".*", [](const httplib::Request &req, httplib::Response &res) {
         std::string uniqueID = CreateFileUniqueID(req);
         const std::string responseFile = QUEUE_RES_DIR + "/" + uniqueID;
         if (auto result = LoadResponse(responseFile)) {
@@ -97,7 +69,6 @@ int main() {
         res.body = "{\"msg\":\"please wait for access\"}";
     });
 
-    // TODO : [&] にすると動かないのはなぜか調査
     svr.Post(".*", [](const httplib::Request &req, httplib::Response &res) {
         res.status = 200;
         res.body = req.body;
@@ -110,32 +81,10 @@ int main() {
         res.set_content(buf, "text/plain");
     });
 
-    // TODO: シンプルに書く or 関数を作って呼び出す
-    svr.set_logger([](const httplib::Request &req, const httplib::Response &res) {
-        std::string s;
-        char buf[BUFSIZ];
-
-        snprintf(buf, sizeof(buf), "%s %s %s", req.method.c_str(),
-                 req.version.c_str(), req.path.c_str());
-        s += buf;
-
-        std::string query;
-        for (auto it = req.params.begin(); it != req.params.end(); ++it) {
-            const auto &x = *it;
-            snprintf(buf, sizeof(buf), "%c%s=%s",
-                     (it == req.params.begin()) ? '?' : '&', x.first.c_str(),
-                     x.second.c_str());
-            query += buf;
-        }
-        snprintf(buf, sizeof(buf), "%s\n", query.c_str());
-        s += buf;
-        snprintf(buf, sizeof(buf), "%d\n", res.status);
-        s += buf;
-        spdlog::debug(s);
-    });
-
+    svr.set_logger(Log);
     svr.listen(PROXY_ADDRESS.c_str(), PROXY_PORT);
 
     //    const int resultQueueManager = futureQueueManager.get();
     //    const int resultConnectionManager = futureConnectionManager.get();
 }
+

@@ -1,4 +1,5 @@
 #pragma once
+#include <nlohmann/json.hpp>
 #include <httplib.h>
 
 namespace httplib {

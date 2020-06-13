@@ -3,7 +3,12 @@ project(queue-proxy)
 
 set(CMAKE_CXX_STANDARD 20)
 add_subdirectory(include)
-add_executable(queue-proxy src/main.cpp)
+add_executable(queue-proxy
+        src/main.cpp
+        src/file.cpp
+        )
+
+set(CMAKE_CXX_FLAGS "-DCPPHTTPLIB_OPENSSL_SUPPORT")
 
 if (APPLE)
     set(OPENSSL_ROOT_DIR ${OPENSSL_ROOT_DIR} /usr/local/opt/openssl/)

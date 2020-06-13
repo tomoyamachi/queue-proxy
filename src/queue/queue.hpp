@@ -1,6 +1,7 @@
 #pragma once
 #include "../common.hpp"
 #include "../run_parallel.hpp"
+#include "../uri.hpp"
 #include <httplib.h>
 
 namespace ProxyQueue {
@@ -27,18 +28,10 @@ namespace ProxyQueue {
             return p;
         }
 
-
-        std::optional<httplib::Response> requestFromParams(httplib::Request p) {
+        std::optional<httplib::Response> requestFromParams(const httplib::Request p) {
             Uri url = Uri::Parse(p.target);
-            // TODO: client作成部分は httplib::Client か httplib::SSLClient のどちらかを返す関数をつくって、autoで設定したい
-            httplib::Client cli(url.Host);
-            // MEMO: OPENSSL_SUPPORTされてる前提でつくってもいいかも
-#ifdef CPPHTTPLIB_OPENSSL_SUPPORT
-            if (url.Protocol == "https") {
-                httplib::SSLClient cli(url.Host);
-            }
-#endif
-
+            auto untilHost =  url.Protocol+"://"+url.Host;
+            auto cli = httplib::Client2(untilHost.c_str());
             if (!cli.is_valid()) {
                 throw std::runtime_error("invalid url format : " + p.target);
             }
@@ -57,7 +50,6 @@ namespace ProxyQueue {
             if (!res) {
                 return std::nullopt;
             }
-            // TODO: この記法でいいか確認
             return *res;
         }
 
