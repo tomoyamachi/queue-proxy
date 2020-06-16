@@ -1,10 +1,27 @@
 #pragma once
-
+#include <memory>
 namespace ProxyQueue {
     // https://stackoverflow.com/questions/2616011/easy-way-to-parse-a-url-in-c-cross-platform
     struct Uri {
     public:
         std::string QueryString, Path, Protocol, Host, Port;
+
+        // pointer likeに
+        Uri* operator->() {
+            return this;
+
+        }
+
+        bool operator==(const Uri &other) const {
+            return QueryString == other.QueryString
+                   && Path == other.Path
+                   && Protocol == other.Protocol
+                   && Host == other.Host
+                   && Port == other.Port;
+        }
+        bool operator!=(const Uri &other) const {
+            return !(*this == other);
+        }
 
         static Uri Parse(const std::string &uri) {
             Uri result;
@@ -38,8 +55,8 @@ namespace ProxyQueue {
             auto pathStart = std::find(hostStart, uriEnd, L'/');// get pathStart
 
             auto hostEnd = std::find(protocolEnd,
-                                           (pathStart != uriEnd) ? pathStart : queryStart,
-                                           ':');// check for port
+                                     (pathStart != uriEnd) ? pathStart : queryStart,
+                                     ':');// check for port
 
             result.Host = std::string(hostStart, hostEnd);
 
@@ -62,4 +79,4 @@ namespace ProxyQueue {
 
         }// Parse
     };   // uri
-}
+}// namespace ProxyQueue
