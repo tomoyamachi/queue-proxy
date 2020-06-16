@@ -48,7 +48,7 @@ int main() {
 
     // Start a proxy server
     httplib::Server svr;
-    svr.Get(".*", [](const httplib::Request &req, httplib::Response &res) {
+    svr.Get(".*", [&](const httplib::Request &req, httplib::Response &res) {
         std::string uniqueID = CreateFileUniqueID(req);
         const std::string responseFile = QUEUE_RES_DIR + "/" + uniqueID;
         if (auto result = LoadResponse(responseFile)) {
@@ -63,6 +63,7 @@ int main() {
         if (!std::filesystem::exists(requestFile)) {
             spdlog::debug("save to request file: {}", requestFile);
             SaveAsRequestQueue(requestFile, req);
+            queueManager.notify();
         }
 
         res.status = STATUS_TEMPRARY_REDIRECT;
