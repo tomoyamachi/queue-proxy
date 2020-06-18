@@ -56,8 +56,10 @@ namespace ProxyQueue {
     public:
         int run() override {
             for (;;) {
-
-                if (QueueManager::m_stop) {
+                std::unique_lock ul(m_mutex);
+                // sometimes run not notify_one, but it is not a matter.
+                m_cv.wait(ul);
+                if (m_stop) {
                     break;
                 }
 
